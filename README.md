@@ -1,6 +1,6 @@
 # ShellThumbs
 
-Extract thumbnails and icons for files using the Windows Shell API
+C# project for extracting thumbnails and icons for files using the Windows Shell API. You can get thumbnails/previews for images, videos, documents and other file types that have registered shell extensions. If not you get th file icon instead.
 
 ## About
 
@@ -8,6 +8,6 @@ Original from http://stackoverflow.com/questions/21751747/extract-thumbnail-for-
 
 I took above code and packaged it, tweaked it and added some comments and other findings along the way
 
-## Usage
+## Example
 
-Bitmap bm = ShellThumbs.WindowsThumbnailProvider.GetThumbnail( @"c:\temp\video.avi", 64, 64, ThumbnailOptions.None );
+`Bitmap bm = ShellThumbs.WindowsThumbnailProvider.GetThumbnail( @"c:\temp\video.avi", 64, 64, ThumbnailOptions.None );`
