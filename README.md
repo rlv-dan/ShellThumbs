@@ -6,8 +6,16 @@ C# project for extracting thumbnails and icons for files using the Windows Shell
 
 Original from http://stackoverflow.com/questions/21751747/extract-thumbnail-for-any-file-in-windows
 
-I took above code and packaged it, tweaked it and added some comments and other findings along the way
+I took above code and packaged it together with some tweaks and enhancements, plus comments and other findings along the way.
 
-## Example
+## Examples
 
-`Bitmap bm = ShellThumbs.WindowsThumbnailProvider.GetThumbnail( @"c:\temp\video.avi", 64, 64, ThumbnailOptions.None );`
+`Bitmap thumbnail_or_icon = ShellThumbs.WindowsThumbnailProvider.GetThumbnail( @"c:\temp\video.avi", 64, 64, ThumbnailOptions.None );`
+
+`Bitmap thumbnail_or_null = ShellThumbs.WindowsThumbnailProvider.GetThumbnail( @"c:\temp\video.avi", 64, 64, ThumbnailOptions.ThumbnailOnly );`
+
+`Bitmap icon = ShellThumbs.WindowsThumbnailProvider.GetThumbnail( @"c:\temp\video.avi", 64, 64, ThumbnailOptions.IconOnly );`
+
+## Notes
+
+Normally, GetThumbnail returns the thumbnail if available, else the file icon. If using the ThumbnailOnly flag, GetThumbnail will return null for files that does not have a thumbnail handler.

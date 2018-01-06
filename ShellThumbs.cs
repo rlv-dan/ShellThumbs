@@ -6,10 +6,16 @@
  * Use the Windows Shell API to extract thumbnails and icons for files
  * 
  * Original from http://stackoverflow.com/questions/21751747/extract-thumbnail-for-any-file-in-windows
- * I took above code and packaged it, tweaked it and added some comments and other findings along the way
+ * I took above code and packaged it together with some tweaks and enhancements, plus comments and other findings along the way.
  * 
  * Usage:
- *   Bitmap bm = ShellThumbs.WindowsThumbnailProvider.GetThumbnail( @"c:\temp\video.avi", 64, 64, ThumbnailOptions.None );
+ *   Bitmap thumbnail_or_icon = ShellThumbs.WindowsThumbnailProvider.GetThumbnail( @"c:\temp\video.avi", 64, 64, ThumbnailOptions.None );
+ *   Bitmap thumbnail_or_null = ShellThumbs.WindowsThumbnailProvider.GetThumbnail( @"c:\temp\video.avi", 64, 64, ThumbnailOptions.ThumbnailOnly );
+ *   Bitmap icon = ShellThumbs.WindowsThumbnailProvider.GetThumbnail( @"c:\temp\video.avi", 64, 64, ThumbnailOptions.IconOnly );
+ *
+ * Notes:
+ *   Normally, GetThumbnail returns the thumbnail if available, else the file icon.
+ *   If using the ThumbnailOnly flag, GetThumbnail will return null for files that does not have a thumbnail handler.
  * 
  */
 
@@ -24,7 +30,7 @@ namespace ShellThumbs
 	[Flags]
 	public enum ThumbnailOptions	// IShellItemImageFactory Flags: https://msdn.microsoft.com/en-us/library/windows/desktop/bb761082%28v=vs.85%29.aspx
 	{
-		None = 0x00,				// Shrink the bitmap as necessary to fit, preserving its aspect ratio.
+		None = 0x00,				// Shrink the bitmap as necessary to fit, preserving its aspect ratio. Returns thumbnail if available, else icon.
 		BiggerSizeOk = 0x01,		// Passed by callers if they want to stretch the returned image themselves. For example, if the caller passes an icon size of 80x80, a 96x96 thumbnail could be returned. This action can be used as a performance optimization if the caller expects that they will need to stretch the image. Note that the Shell implementation of IShellItemImageFactory performs a GDI stretch blit. If the caller wants a higher quality image stretch than provided through that mechanism, they should pass this flag and perform the stretch themselves.
 		InMemoryOnly = 0x02,		// Return the item only if it is already in memory. Do not access the disk even if the item is cached. Note that this only returns an already-cached icon and can fall back to a per-class icon if an item has a per-instance icon that has not been cached. Retrieving a thumbnail, even if it is cached, always requires the disk to be accessed, so GetImage should not be called from the UI thread without passing SIIGBF_MEMORYONLY.
 		IconOnly = 0x04,			// Return only the icon, never the thumbnail.
@@ -62,24 +68,39 @@ namespace ShellThumbs
 				throw new FileNotFoundException();
 			}
 
-			var hBitmap = GetHBitmap( Path.GetFullPath( fileName ), width, height, options );
-
+			Bitmap clonedBitmap = null;
+			IntPtr hBitmap = new IntPtr();
+			
 			try
 			{
+				hBitmap = GetHBitmap( Path.GetFullPath( fileName ), width, height, options );
+
 				// Original code returned the bitmap directly:
-				//return GetBitmapFromHBitmap( hBitmap );
+				//   return GetBitmapFromHBitmap( hBitmap );
 				// I'm making a clone first, so I can dispose of the original bitmap.
 				// The returned clone should be managed and not need disposing of. (I think...)
 				Bitmap thumbnail = GetBitmapFromHBitmap( hBitmap );
-				Bitmap cloned =  thumbnail.Clone() as Bitmap;
+				clonedBitmap = thumbnail.Clone() as Bitmap;
 				thumbnail.Dispose();
-				return cloned;
+			}
+			catch( System.Runtime.InteropServices.COMException ex )
+			{
+				if( ex.ErrorCode == -2147175936 && options.HasFlag( ThumbnailOptions.ThumbnailOnly ) )	// -2147175936 == 0x8004B200
+				{
+					clonedBitmap = null;
+				}
+				else
+				{
+					throw;
+				}
 			}
 			finally
 			{
 				// delete HBitmap to avoid memory leaks
 				DeleteObject( hBitmap );
 			}
+
+			return clonedBitmap;
 		}
 
 		public static Bitmap GetBitmapFromHBitmap( IntPtr nativeHBitmap )
@@ -146,7 +167,6 @@ namespace ShellThumbs
 			Marshal.ReleaseComObject( nativeShellItem );
 
 			if( hr == HResult.Ok ) return hBitmap;
-
 			throw Marshal.GetExceptionForHR( (int)hr );
 		}
 
