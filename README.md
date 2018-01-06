@@ -2,6 +2,8 @@
 
 C# project for extracting thumbnails and icons for files using the Windows Shell API. You can get thumbnails/previews for images, videos, documents and other file types that have registered shell extensions. If not you get th file icon instead.
 
+Includes a demo project to toy around with to understand how it works and bahaves in different situations.
+
 ## About
 
 Original from http://stackoverflow.com/questions/21751747/extract-thumbnail-for-any-file-in-windows
