@@ -63,7 +63,7 @@ namespace ShellThumbs
 
 		public static Bitmap GetThumbnail( string fileName, int width, int height, ThumbnailOptions options )
 		{
-			if( !File.Exists( fileName ) )
+			if( !File.Exists( fileName ) && !Directory.Exists( fileName ) )
 			{
 				throw new FileNotFoundException();
 			}
